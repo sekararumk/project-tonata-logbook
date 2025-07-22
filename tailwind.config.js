@@ -4,10 +4,15 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: "#b71c1c",
-      }
+        primary: "#FFEAEA",
+        secondary: "#1A3D5E"
+      },
+      fontFamily: {
+        playfair: ['Raleway', 'serif'],
+      },
     },
   },
   plugins: [],
 }
 
+// #FC8EAC
