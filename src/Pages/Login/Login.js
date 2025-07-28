@@ -6,24 +6,34 @@ const Login = () => {
   return (
     <div className="w-full flex flex-col lg:flex-row min-h-screen">
       {/* Image section */}
-      <div className="hidden lg:block lg:w-1/2">
+      <div className="hidden lg:block lg:w-2/3">
         <img
-          src="https://mediacenter.batam.go.id/wp-content/uploads/sites/60/2019/01/KPU.jpg"
+          src="./Login.jpg"
           alt="Login Visual"
-          className="w-full h-screen object-cover -translate-x-[5%]"
+          className="w-full h-screen object-cover object-right"
         />
       </div>
 
       {/* Form section */}
-      <div className="flex w-full lg:w-1/2 justify-center items-center p-6">
+      <div className="flex w-full lg:w-1/3 justify-center items-center p-10">
         <form className="w-full max-w-md bg-white">
-          <img src="https://mediacenter.batam.go.id/wp-content/uploads/sites/60/2019/01/KPU.jpg" alt="logo-img" width="180" className="mb-4" />
+          <div className="flex flex-col items-center mb-6">
+            <img
+              src="./Logo.png"
+              alt="logo-img"
+              width="120"
+              className="mb-2"
+            />
+            <h3 className="text-2xl font-bold">Login</h3>
+          </div>
 
-          <h3 className="text-2xl font-bold mb-3">Login</h3>
           {/* Email Field */}
           <div className="mb-4">
-            <label htmlFor="email" className="block mb-1 text-sm font-medium text-start">
-              Email
+            <label
+              htmlFor="email"
+              className="block mb-1 text-sm font-medium text-start"
+            >
+              Username
             </label>
             <input
               type="email"
@@ -36,7 +46,10 @@ const Login = () => {
 
           {/* Password Field */}
           <div className="mb-4">
-            <label htmlFor="password" className="block mb-1 text-sm font-medium text-start">
+            <label
+              htmlFor="password"
+              className="block mb-1 text-sm font-medium text-start"
+            >
               Password
             </label>
             <input
@@ -51,9 +64,26 @@ const Login = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-rose-400 text-white text-sm h-12 rounded-xl hover:bg-rose-300 transition mb-4"
+            className="w-full bg-rose-400 text-white text-sm h-12 rounded-xl hover:bg-rose-300 transition"
           >
             Login
+          </button>
+          <div className="flex items-center my-4">
+            <div className="flex-grow h-px bg-gray-300"></div>
+            <span className="px-2 text-gray-500 text-sm">atau</span>
+            <div className="flex-grow h-px bg-gray-300"></div>
+          </div>
+
+          <button
+            type="button"
+            className="w-full border border-gray-300 flex items-center justify-center gap-3 h-12 rounded-xl text-sm hover:bg-gray-100 transition"
+          >
+            <img
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              alt="Google logo"
+              className="w-5 h-5"
+            />
+            Login dengan Google
           </button>
         </form>
       </div>
