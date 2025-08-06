@@ -1,8 +1,61 @@
-// import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 // import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 // import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 
 const Login = () => {
+  const [formData, setFormData] = useState({
+    username: '',
+    password: ''
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      console.log('🔄 Attempting login...');
+      const response = await fetch('http://localhost:5001/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+      console.log('📡 Login response:', data);
+
+      if (response.ok && data.success) {
+        // Simpan token dan user info ke localStorage
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+
+        console.log('✅ Login successful, token saved');
+        console.log('🔐 Token:', data.token);
+        console.log('👤 User:', data.user);
+
+        // Redirect ke Homepage
+        navigate('/Homepage');
+      } else {
+        console.error('Login failed:', data.error || 'Username atau password salah');
+      }
+    } catch (error) {
+      console.error('❌ Login error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   return (
     <div className="w-full flex flex-col lg:flex-row min-h-screen">
       {/* Image section */}
@@ -16,7 +69,7 @@ const Login = () => {
 
       {/* Form section */}
       <div className="flex w-full lg:w-1/3 justify-center items-center p-10">
-        <form className="w-full max-w-md bg-white">
+        <form onSubmit={handleSubmit} className="w-full max-w-md bg-white">
           <div className="flex flex-col items-center mb-6">
             <img
               src="./Logo.png"
@@ -27,20 +80,24 @@ const Login = () => {
             <h3 className="text-2xl font-bold">Login</h3>
           </div>
 
-          {/* Email Field */}
+          {/* Username Field */}
           <div className="mb-4">
             <label
-              htmlFor="email"
+              htmlFor="username"
               className="block mb-1 text-sm font-medium text-start"
             >
               Username
             </label>
             <input
-              type="email"
-              id="email"
+              type="text"
+              id="username"
+              name="username"
+              value={formData.username}
+              onChange={handleInputChange}
               className="w-full border border-gray-300 rounded-xl h-12 px-4 text-sm"
-              placeholder="Contoh: johndee@gmail.com"
-              autoComplete="true"
+              placeholder="Masukkan username Anda"
+              autoComplete="username"
+              required
             />
           </div>
 
@@ -55,18 +112,23 @@ const Login = () => {
             <input
               type="password"
               id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleInputChange}
               className="w-full border border-gray-300 rounded-xl h-12 px-4 text-sm"
               placeholder="At least 6 characters with number and uppercase"
-              autoComplete="true"
+              autoComplete="current-password"
+              required
             />
           </div>
 
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-rose-400 text-white text-sm h-12 rounded-xl hover:bg-rose-300 transition"
+            disabled={isLoading}
+            className="w-full bg-rose-400 text-white text-sm h-12 rounded-xl hover:bg-rose-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Login
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
           <div className="flex items-center my-4">
             <div className="flex-grow h-px bg-gray-300"></div>

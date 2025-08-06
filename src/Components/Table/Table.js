@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import CardAddData from "../CardAddData/CardAddData";
 import CardEditData from "../CardEditData/CardEditData";
-import DeleteConfirmationModal from "../DeleteConfirmationModal/DeleteConfirmationModal"; // Import komponen modal baru
+import DeleteConfirmationModal from "../DeleteConfirmationModal/DeleteConfirmationModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCircleInfo,
@@ -10,57 +10,26 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 const Table = () => {
-  const [data, setData] = useState([
-    {
-      id: 1,
-      date: "2025-07-20",
-      nama: "Sekar Arum",
-      judul: "Logbook Entry 1",
-      keterangan: "Rapat Pleno",
-    },
-    {
-      id: 2,
-      date: "2025-07-21",
-      nama: "Sekar Arum",
-      judul: "Logbook Entry 2",
-      keterangan: "Rapat Pleno 2",
-    },
-    {
-      id: 3,
-      date: "2025-07-21",
-      nama: "Sekar Arum",
-      judul: "Logbook Entry 2",
-      keterangan: "Rapat Pleno 2",
-    },
-    {
-      id: 4,
-      date: "2025-07-21",
-      nama: "Sekar Arum",
-      judul: "Logbook Entry 2",
-      keterangan: "Rapat Pleno 2",
-    },
-    {
-      id: 5,
-      date: "2025-07-21",
-      nama: "Sekar Arum",
-      judul: "Logbook Entry 2",
-      keterangan: "Rapat Pleno 2",
-    },
-    {
-      id: 6,
-      date: "2025-07-21",
-      nama: "Sekar Arum",
-      judul: "Logbook Entry 2",
-      keterangan: "Rapat Pleno 2",
-    },
-    {
-      id: 7,
-      date: "2025-07-21",
-      nama: "Sekar Arum",
-      judul: "Logbook Entry 2",
-      keterangan: "Rapat Pleno 2",
-    },
-  ]);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Fungsi untuk memformat tanggal (hanya tanggal, tanpa waktu)
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('id-ID', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    } catch (error) {
+      return dateString; // Return original string if parsing fails
+    }
+  };
 
   // State untuk modal edit
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -68,10 +37,101 @@ const Table = () => {
 
   // State untuk modal delete
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [itemIdToDelete, setItemIdToDelete] = useState(null); // Menyimpan ID item yang akan dihapus
+  const [itemIdToDelete, setItemIdToDelete] = useState(null);
+
+  // Function untuk mendapatkan token dari localStorage
+  const getAuthToken = () => {
+    return localStorage.getItem('token');
+  };
+
+  // Function untuk mendapatkan user dari localStorage
+  const getCurrentUser = () => {
+    const userStr = localStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : null;
+  };
+
+  // Function untuk fetch data dari backend
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const token = getAuthToken();
+      const user = getCurrentUser();
+      setCurrentUser(user);
+
+      const response = await fetch('http://localhost:5001/api/table-data', {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setData(result.data);
+        console.log('Data loaded successfully:', result.data.length, 'items');
+        console.log('Current user:', user?.username || 'Anonymous');
+      } else {
+        throw new Error(result.error || 'Failed to fetch data');
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load data on component mount
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Function untuk handle action dengan backend
+  const handleTableAction = async (action, id, data = null) => {
+    try {
+      const token = getAuthToken();
+      
+      if (!token && (action === 'edit' || action === 'delete')) {
+        return false;
+      }
+
+      const response = await fetch('http://localhost:5001/api/table-action', {
+        method: 'POST',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action, id, data })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        if (action === 'view') {
+          console.log('View logbook:', result.data);
+        } else if (action === 'delete') {
+          fetchData(); // Refresh data
+        } else if (action === 'edit') {
+          fetchData(); // Refresh data
+        }
+        return true;
+      } else {
+        console.error('Table action error:', result.error || 'Terjadi kesalahan');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error handling table action:', error);
+      return false;
+    }
+  };
 
   const handleView = (id) => {
-    alert(`Melihat data dengan ID: ${id}`);
+    handleTableAction('view', id);
   };
 
   const handleEdit = (id) => {
@@ -83,27 +143,35 @@ const Table = () => {
   };
 
   const handleDelete = (id) => {
-    setItemIdToDelete(id); // Simpan ID yang akan dihapus
-    setIsDeleteModalOpen(true); // Buka modal konfirmasi delete
+    setItemIdToDelete(id);
+    setIsDeleteModalOpen(true);
   };
 
-  const handleConfirmDelete = (id) => {
-    setData(data.filter((row) => row.id !== id));
-    setIsDeleteModalOpen(false); // Tutup modal setelah konfirmasi
-    setItemIdToDelete(null); // Reset ID yang akan dihapus
+  const handleConfirmDelete = async (id) => {
+    const success = await handleTableAction('delete', id);
+    if (success) {
+      setIsDeleteModalOpen(false);
+      setItemIdToDelete(null);
+    }
   };
 
   const handleCloseDeleteModal = () => {
     setIsDeleteModalOpen(false);
-    setItemIdToDelete(null); // Reset ID yang akan dihapus
+    setItemIdToDelete(null);
   };
 
-  const handleSaveEditedData = (updatedData) => {
-    setData((prevData) =>
-      prevData.map((row) => (row.id === updatedData.id ? updatedData : row))
-    );
-    setIsEditModalOpen(false);
-    setDataToEdit(null);
+  const handleSaveEditedData = async (updatedData) => {
+    const success = await handleTableAction('edit', updatedData.id, {
+      date: updatedData.date,
+      judul: updatedData.judul,
+      keterangan: updatedData.keterangan
+    });
+    
+    if (success) {
+      setIsEditModalOpen(false);
+      setDataToEdit(null);
+      fetchData(); // Refresh data setelah edit
+    }
   };
 
   const handleCloseEditModal = () => {
@@ -111,7 +179,7 @@ const Table = () => {
     setDataToEdit(null);
   };
 
-  const [itemsPerPage, setItemsPerPage] = useState(data.length); // Default "Semua"
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   
   // Pagination
@@ -138,14 +206,57 @@ const Table = () => {
     setCurrentPage(1);
   };
 
+
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="mt-16">
+        <div className="bg-amber-50 min-h-screen p-6">
+          <div className="flex justify-center items-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Loading data...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="mt-16">
+        <div className="bg-amber-50 min-h-screen p-6">
+          <div className="flex justify-center items-center h-64">
+            <div className="text-center">
+              <div className="text-red-600 text-xl mb-4">❌ Error</div>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <button 
+                onClick={fetchData}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Coba Lagi
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-16">
       <div className="bg-amber-50 min-h-screen p-6">
         <h2 className="text-3xl text-secondary text-center font-bold">
           Logbook Table
         </h2>
+        
+
+        
         <div className="p-6 max-w-6xl mx-auto bg-white rounded-xl shadow-md mt-6">
-          <CardAddData />
+          <CardAddData onDataAdded={fetchData} />
           <div className="overflow-hidden rounded-md shadow-md">
             <table className="min-w-full">
               <thead className="bg-rose-300">
@@ -162,7 +273,7 @@ const Table = () => {
                 {paginatedData.map((row, index) => (
                   <tr key={row.id}>
                     <td className="p-2 border">{startIndex + index + 1}</td>
-                    <td className="p-2 border">{row.date}</td>
+                    <td className="p-2 border">{formatDate(row.date)}</td>
                     <td className="p-2 border">{row.nama}</td>
                     <td className="p-2 border">{row.judul}</td>
                     <td className="p-2 border">{row.keterangan}</td>
@@ -170,7 +281,8 @@ const Table = () => {
                       <div className="flex justify-center space-x-2">
                         <button
                           onClick={() => handleView(row.id)}
-                          className="bg-blue-700 text-white font-medium py-2 px-4 rounded"
+                          className="bg-blue-700 text-white font-medium py-2 px-4 rounded hover:bg-blue-800"
+                          title="Semua user bisa melihat"
                         >
                           <FontAwesomeIcon
                             icon={faCircleInfo}
@@ -178,23 +290,29 @@ const Table = () => {
                           />
                           View
                         </button>
-                        <button
-                          onClick={() => handleEdit(row.id)}
-                          className="bg-yellow-300 text-black font-medium py-2 px-4 rounded"
-                        >
-                          <FontAwesomeIcon
-                            icon={faPenToSquare}
-                            className="me-2"
-                          />
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(row.id)}
-                          className="bg-red-600 text-white font-medium py-2 px-4 rounded"
-                        >
-                          <FontAwesomeIcon icon={faTrash} className="me-2" />
-                          Delete
-                        </button>
+                        {row.canEdit && (
+                          <button
+                            onClick={() => handleEdit(row.id)}
+                            className="bg-yellow-300 text-black font-medium py-2 px-4 rounded hover:bg-yellow-400"
+                            title="Klik untuk edit"
+                          >
+                            <FontAwesomeIcon
+                              icon={faPenToSquare}
+                              className="me-2"
+                            />
+                            Edit
+                          </button>
+                        )}
+                        {row.canDelete && (
+                          <button
+                            onClick={() => handleDelete(row.id)}
+                            className="bg-red-600 text-white font-medium py-2 px-4 rounded hover:bg-red-700"
+                            title="Klik untuk hapus"
+                          >
+                            <FontAwesomeIcon icon={faTrash} className="me-2" />
+                            Delete
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
