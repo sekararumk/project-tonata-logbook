@@ -9,7 +9,7 @@ const Navbar = () => {
           <div className="flex-shrink-0 text-xl font-bold text-sky-700">
             TONATA Logbook
           </div>
-          <button className="bg-red-600 text-white font-medium py-2 px-4 rounded hover:bg-red-700 transition">
+          <button className="bg-red-600 text-white font-bold py-2 px-4 rounded hover:bg-red-700 transition">
             <FontAwesomeIcon icon={faRightFromBracket} className="me-2" />
             LOGOUT
           </button>
